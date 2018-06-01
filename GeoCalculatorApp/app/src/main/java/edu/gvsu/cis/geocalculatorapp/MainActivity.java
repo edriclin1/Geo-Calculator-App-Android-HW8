@@ -26,36 +26,53 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.joda.time.DateTime;
+
+import edu.gvsu.cis.geocalculatorapp.dummy.HistoryContent;
+
 public class MainActivity extends AppCompatActivity {
 
     private String distanceUnits = "Kilometers";
     private String bearingUnits = "Degrees";
 
-    public static final int UNITS_SELECTION = 1;
+    public static final int SETTINGS_RESULT = 1;
+    public static final int HISTORY_RESULT = 2;
+
+    EditText p1LatField = null;
+    EditText p1LongField = null;
+    EditText p2LatField = null;
+    EditText p2LongField = null;
+
+    Button calculateButton = null;
+    Button clearButton = null;
+//        Button settingsButton = findViewById(R.id.settingsButton);
+
+    TextView distanceLabel = null;
+    TextView bearingLabel = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        EditText p1LatField = findViewById(R.id.p1LatField);
-        EditText p1LongField = findViewById(R.id.p1LongField);
-        EditText p2LatField = findViewById(R.id.p2LatField);
-        EditText p2LongField = findViewById(R.id.p2LongField);
+        p1LatField = findViewById(R.id.p1LatField);
+        p1LongField = findViewById(R.id.p1LongField);
+        p2LatField = findViewById(R.id.p2LatField);
+        p2LongField = findViewById(R.id.p2LongField);
 
-        Button calculateButton = findViewById(R.id.calculateButton);
-        Button clearButton = findViewById(R.id.clearButton);
-//        Button settingsButton = findViewById(R.id.settingsButton);
+        calculateButton = findViewById(R.id.calculateButton);
+        clearButton = findViewById(R.id.clearButton);
+//        settingsButton = findViewById(R.id.settingsButton);
 
-        TextView distanceLabel = findViewById(R.id.distanceLabel);
-        TextView bearingLabel = findViewById(R.id.bearingLabel);
+        distanceLabel = findViewById(R.id.distanceLabel);
+        bearingLabel = findViewById(R.id.bearingLabel);
 
 
         ConstraintLayout layout = findViewById(R.id.MainActivityLayout);
         layout.setOnTouchListener((v, ev) -> {
-                InputMethodManager in = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                in.hideSoftInputFromWindow(v.getWindowToken(), 0);
-                return true;
+            InputMethodManager in = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            in.hideSoftInputFromWindow(v.getWindowToken(), 0);
+            return true;
         });
 
         calculateButton.setOnClickListener(v -> {
@@ -108,6 +125,10 @@ public class MainActivity extends AppCompatActivity {
                         " " + this.distanceUnits);
                 bearingLabel.setText(getString(R.string.emptyBearing) + " " + String.format("%.2f", bearing) +
                         " " + this.bearingUnits);
+
+                // remember the calculation.
+                HistoryContent.HistoryItem item = new HistoryContent.HistoryItem(p1LatStr, p1LongStr, p2LatStr, p2LongStr, DateTime.now());
+                HistoryContent.addItem(item);
             }
         });
 
@@ -135,17 +156,22 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == UNITS_SELECTION) {
+        if (resultCode == SETTINGS_RESULT) {
             this.distanceUnits = data.getStringExtra("distanceUnits");
             this.bearingUnits = data.getStringExtra("bearingUnits");
 
-            TextView distanceLabel = findViewById(R.id.distanceLabel);
-            TextView bearingLabel = findViewById(R.id.bearingLabel);
-            Button calculateButton = findViewById(R.id.calculateButton);
-
-            if (distanceLabel.getText().length() > 9) {
-                calculateButton.performClick();
+            if (this.distanceLabel.getText().length() > 9) {
+                this.calculateButton.performClick();
             }
+        } else if (resultCode == HISTORY_RESULT) {
+            String[] vals = data.getStringArrayExtra("item");
+
+            this.p1LatField.setText(vals[0]);
+            this.p1LongField.setText(vals[1]);
+            this.p2LatField.setText(vals[2]);
+            this.p2LongField.setText(vals[3]);
+
+            this.calculateButton.performClick();
         }
     }
 
@@ -158,10 +184,21 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        Intent intent = new Intent(MainActivity.this, SettingsAcitvity.class);
+/*        Intent intent = new Intent(MainActivity.this, SettingsAcitvity.class);
         intent.putExtra("distanceUnits", this.distanceUnits);
         intent.putExtra("bearingUnits", this.bearingUnits);
         startActivityForResult(intent, UNITS_SELECTION);
-        return super.onOptionsItemSelected(item);
+        return super.onOptionsItemSelected(item);*/
+
+        if (item.getItemId() == R.id.action_settings) {
+            Intent intent = new Intent(MainActivity.this, SettingsAcitvity.class);
+            startActivityForResult(intent, SETTINGS_RESULT);
+            return true;
+        } else if (item.getItemId() == R.id.action_history) {
+            Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
+            startActivityForResult(intent, HISTORY_RESULT);
+            return true;
+        }
+        return false;
     }
 }

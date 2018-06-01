@@ -37,7 +37,7 @@ public class SettingsAcitvity extends AppCompatActivity {
                 intent.putExtra("distanceUnits", distanceUnitsSelection);
                 intent.putExtra("bearingUnits", bearingUnitsSelection);
 
-                setResult(MainActivity.UNITS_SELECTION, intent);
+                setResult(MainActivity.SETTINGS_RESULT, intent);
 
                 finish();
             }
